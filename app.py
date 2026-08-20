@@ -118,15 +118,21 @@ if opcion == " Registrar Expediente":
             doc_fump = st.file_uploader(
                 "4. F.U.M.P.", type=["pdf", "png", "jpg", "jpeg"]
             )
-        with c2:
             doc_rfc = st.file_uploader(
                 "5. RFC / Constancia Fiscal", type=["pdf", "png", "jpg", "jpeg"]
             )
+        with c2:
             doc_solicitud = st.file_uploader(
                 "6. Solicitud de Empleo", type=["pdf", "png", "jpg", "jpeg"]
             )
             doc_no_moroso = st.file_uploader(
                 "7. Constancia de No Moroso", type=["pdf", "png", "jpg", "jpeg"]
+            )
+            doc_cedula = st.file_uploader(
+                "8. Cédula Profesional", type=["pdf", "png", "jpg", "jpeg"]
+            )
+            doc_titulo = st.file_uploader(
+                "9. Título Profesional", type=["pdf", "png", "jpg", "jpeg"]
             )
 
         submit = st.form_submit_button("💾 Guardar Expediente Completo")
@@ -157,7 +163,7 @@ if opcion == " Registrar Expediente":
                         ),
                     )
 
-                    # Mapeo de los 7 documentos oficiales
+                    # Mapeo de los 9 documentos oficiales
                     documentos_dict = {
                         "CURP": doc_curp,
                         "Acta_Nacimiento": doc_acta,
@@ -166,6 +172,8 @@ if opcion == " Registrar Expediente":
                         "RFC": doc_rfc,
                         "Solicitud_Empleo": doc_solicitud,
                         "Constancia_No_Moroso": doc_no_moroso,
+                        "Cedula_Profesional": doc_cedula,
+                        "Titulo_Profesional": doc_titulo,
                     }
 
                     for tipo, file_obj in documentos_dict.items():
