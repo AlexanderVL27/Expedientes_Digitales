@@ -1,289 +1,155 @@
-import os
-import sqlite3
 import pandas as pd
 import streamlit as st
 
-# Configuración de página
+# Configuración de interfaz
 st.set_page_config(
-    page_title="Gestor de Expedientes Digitales", page_icon="📁", layout="wide"
+    page_title="Gestor de Expedientes (Demo UI)", page_icon="📁", layout="wide"
 )
 
-# DIRECTORIOS Y BASE DE DATOS
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DB_PATH = os.path.join(BASE_DIR, "expedientes.db")
-EXPEDIENTES_DIR = os.path.join(BASE_DIR, "Expedientes_Digitales")
+st.title("📁 Sistema de Expedientes Digitales — Vista Previa")
 
-# Asegurar carpeta de almacenamiento
-os.makedirs(EXPEDIENTES_DIR, exist_ok=True)
-
-
-def init_db():
-    """Inicializa las tablas en la base de datos."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS personas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            curp TEXT UNIQUE NOT NULL,
-            rfc TEXT,
-            nombre TEXT NOT NULL,
-            primer_apellido TEXT NOT NULL,
-            segundo_apellido TEXT,
-            telefono TEXT,
-            correo TEXT,
-            area_puesto TEXT,
-            fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """
-    )
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS documentos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            persona_curp TEXT NOT NULL,
-            tipo_documento TEXT NOT NULL,
-            nombre_archivo TEXT NOT NULL,
-            ruta_archivo TEXT NOT NULL,
-            fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (persona_curp) REFERENCES personas (curp) ON DELETE CASCADE
-        )
-    """
-    )
-    conn.commit()
-    conn.close()
-
-
-init_db()
-
-
-def guardar_archivo(curp, uploaded_file, tipo_doc):
-    """Guarda el archivo en carpetas físicas organizadas por CURP."""
-    if uploaded_file is None:
-        return None
-
-    folder_persona = os.path.join(EXPEDIENTES_DIR, curp.upper().strip())
-    os.makedirs(folder_persona, exist_ok=True)
-
-    ext = os.path.splitext(uploaded_file.name)[1]
-    nombre_guardado = f"{tipo_doc.replace(' ', '_')}{ext}"
-    ruta_completa = os.path.join(folder_persona, nombre_guardado)
-
-    with open(ruta_completa, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-
-    return ruta_completa
-
-
-# --- INTERFAZ DE USUARIO ---
-st.title("📁 Sistema de Expedientes Digitales")
-
+# Menú lateral
 menu = [" Registrar Expediente", "🔍 Buscar y Consultar", "📊 Reportes Excel"]
 opcion = st.sidebar.selectbox("Menú de Navegación", menu)
 
 # ---------------------------------------------------------
-# REGISTRAR EXPEDIENTE
+# 1. REGISTRAR EXPEDIENTE (SOLO INTERFAZ)
 # ---------------------------------------------------------
 if opcion == " Registrar Expediente":
-    st.subheader("Registro de Personal y Documentación")
+    st.subheader("Registro de Personal")
 
-    with st.form("form_registro", clear_on_submit=True):
+    with st.form("form_demo"):
+        st.markdown("##### 👤 Datos Personales")
         col1, col2, col3 = st.columns(3)
         with col1:
-            curp = st.text_input("CURP *").upper().strip()
-            nombre = st.text_input("Nombre(s) *")
-            telefono = st.text_input("Teléfono")
+            st.text_input("CURP *", placeholder="AAAA000000XXXXXX00")
+            st.text_input("Nombre(s) *")
+            st.text_input("Teléfono", placeholder="10 dígitos")
         with col2:
-            rfc = st.text_input("RFC").upper().strip()
-            primer_apellido = st.text_input("Primer Apellido *")
-            correo = st.text_input("Correo Electrónico")
+            st.text_input("RFC", placeholder="AAAA000000XXX")
+            st.text_input("Primer Apellido *")
+            st.text_input("Correo Electrónico")
         with col3:
-            area_puesto = st.text_input("Área / Puesto")
-            segundo_apellido = st.text_input("Segundo Apellido")
+            st.text_input("Área / Puesto")
+            st.text_input("Segundo Apellido")
 
         st.markdown("---")
-        st.write("### 📄 Carga de Documentos Oficiales")
+        st.markdown("##### 📄 Carga de Documentos Oficiales (9 Requisitos)")
 
         c1, c2 = st.columns(2)
         with c1:
-            doc_curp = st.file_uploader(
-                "1. CURP (PDF/Imagen)", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "1. CURP", type=["pdf", "png", "jpg"], key="u_curp"
             )
-            doc_acta = st.file_uploader(
-                "2. Acta de Nacimiento", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "2. Acta de Nacimiento", type=["pdf", "png", "jpg"], key="u_acta"
             )
-            doc_domicilio = st.file_uploader(
-                "3. Comprobante de Domicilio", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "3. Comprobante de Domicilio",
+                type=["pdf", "png", "jpg"],
+                key="u_dom",
             )
-            doc_fump = st.file_uploader(
-                "4. F.U.M.P.", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "4. F.U.M.P.", type=["pdf", "png", "jpg"], key="u_fump"
             )
-            doc_rfc = st.file_uploader(
-                "5. RFC / Constancia Fiscal", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "5. RFC / Constancia Fiscal",
+                type=["pdf", "png", "jpg"],
+                key="u_rfc",
             )
         with c2:
-            doc_solicitud = st.file_uploader(
-                "6. Solicitud de Empleo", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "6. Solicitud de Empleo",
+                type=["pdf", "png", "jpg"],
+                key="u_sol",
             )
-            doc_no_moroso = st.file_uploader(
-                "7. Constancia de No Moroso", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "7. Constancia de No Moroso",
+                type=["pdf", "png", "jpg"],
+                key="u_moroso",
             )
-            doc_cedula = st.file_uploader(
-                "8. Cédula Profesional", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "8. Cédula Profesional",
+                type=["pdf", "png", "jpg"],
+                key="u_cedula",
             )
-            doc_titulo = st.file_uploader(
-                "9. Título Profesional", type=["pdf", "png", "jpg", "jpeg"]
+            st.file_uploader(
+                "9. Título Profesional",
+                type=["pdf", "png", "jpg"],
+                key="u_titulo",
             )
 
-        submit = st.form_submit_button("💾 Guardar Expediente Completo")
+        st.markdown("---")
+        guardar = st.form_submit_button("💾 Guardar Expediente (Demo)")
 
-        if submit:
-            if not curp or not nombre or not primer_apellido:
-                st.error(
-                    "Ingresa los campos obligatorios (*): CURP, Nombre y Primer Apellido."
-                )
-            else:
-                conn = sqlite3.connect(DB_PATH)
-                cursor = conn.cursor()
-                try:
-                    cursor.execute(
-                        """
-                        INSERT INTO personas (curp, rfc, nombre, primer_apellido, segundo_apellido, telefono, correo, area_puesto)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                        (
-                            curp,
-                            rfc,
-                            nombre,
-                            primer_apellido,
-                            segundo_apellido,
-                            telefono,
-                            correo,
-                            area_puesto,
-                        ),
-                    )
-
-                    # Mapeo de los 9 documentos oficiales
-                    documentos_dict = {
-                        "CURP": doc_curp,
-                        "Acta_Nacimiento": doc_acta,
-                        "Comprobante_Domicilio": doc_domicilio,
-                        "FUMP": doc_fump,
-                        "RFC": doc_rfc,
-                        "Solicitud_Empleo": doc_solicitud,
-                        "Constancia_No_Moroso": doc_no_moroso,
-                        "Cedula_Profesional": doc_cedula,
-                        "Titulo_Profesional": doc_titulo,
-                    }
-
-                    for tipo, file_obj in documentos_dict.items():
-                        if file_obj is not None:
-                            ruta = guardar_archivo(curp, file_obj, tipo)
-                            cursor.execute(
-                                """
-                                INSERT INTO documentos (persona_curp, tipo_documento, nombre_archivo, ruta_archivo)
-                                VALUES (?, ?, ?, ?)
-                            """,
-                                (curp, tipo, file_obj.name, ruta),
-                            )
-
-                    conn.commit()
-                    st.success(
-                        f"¡Expediente de {nombre} {primer_apellido} registrado con éxito!"
-                    )
-                except sqlite3.IntegrityError:
-                    st.error(
-                        f"El CURP '{curp}' ya existe en la base de datos."
-                    )
-                finally:
-                    conn.close()
+        if guardar:
+            st.info(
+                "💡 Botón presionado. En la siguiente etapa aquí se guardarán los archivos en carpeta y los datos en la BDDD."
+            )
 
 # ---------------------------------------------------------
-# BUSCAR Y CONSULTAR
+# 2. BUSCAR Y CONSULTAR (SOLO INTERFAZ)
 # ---------------------------------------------------------
 elif opcion == "🔍 Buscar y Consultar":
-    st.subheader("Búsqueda y Descarga de Documentos")
+    st.subheader("Búsqueda y Vista de Documentos")
 
-    busqueda = st.text_input(
-        "🔎 Buscar por Nombre, Apellidos, CURP o RFC:"
-    ).strip()
+    st.text_input("🔎 Buscar por Nombre, Apellidos, CURP o RFC:")
 
-    conn = sqlite3.connect(DB_PATH)
-    query = """
-        SELECT curp AS CURP, rfc AS RFC, nombre AS Nombre, 
-               primer_apellido AS [Primer Apellido], segundo_apellido AS [Segundo Apellido],
-               telefono AS Teléfono, area_puesto AS Puesto
-        FROM personas
-    """
+    # Tabla de ejemplo con datos ficticios
+    datos_ejemplo = pd.DataFrame(
+        {
+            "CURP": ["GARM950512MDFXXX01", "VILA920101MDFXXX02"],
+            "RFC": ["GARM950512XX1", "VILA920101XX2"],
+            "Nombre": ["María", "Juan"],
+            "Primer Apellido": ["García", "Pérez"],
+            "Segundo Apellido": ["Mendoza", "López"],
+            "Área/Puesto": ["Sistemas", "Administración"],
+        }
+    )
 
-    if busqueda:
-        query += f" WHERE curp LIKE '%{busqueda}%' OR rfc LIKE '%{busqueda}%' OR nombre LIKE '%{busqueda}%' OR primer_apellido LIKE '%{busqueda}%'"
-
-    df_personas = pd.read_sql_query(query, conn)
-    st.dataframe(df_personas, use_container_width=True)
+    st.write("**Resultados de búsqueda:**")
+    st.dataframe(datos_ejemplo, use_container_width=True)
 
     st.markdown("---")
-    curps = (
-        ["-- Seleccionar --"] + list(df_personas["CURP"].values)
-        if not df_personas.empty
-        else ["-- Seleccionar --"]
+    st.selectbox(
+        "Selecciona un expediente para revisar sus documentos:",
+        [
+            "-- Seleccionar --",
+            "GARM950512MDFXXX01 - María García",
+            "VILA920101MDFXXX02 - Juan Pérez",
+        ],
     )
-    curp_selec = st.selectbox("Selecciona un CURP para revisar expediente:", curps)
 
-    if curp_selec != "-- Seleccionar --":
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT tipo_documento, nombre_archivo, ruta_archivo FROM documentos WHERE persona_curp = ?",
-            (curp_selec,),
-        )
-        docs = cursor.fetchall()
-
-        if docs:
-            st.write(f"**Documentos disponibles para {curp_selec}:**")
-            for tipo, name_file, path_file in docs:
-                col_a, col_b = st.columns([3, 1])
-                with col_a:
-                    st.info(
-                        f"📄 **{tipo.replace('_', ' ')}**: `{name_file}`"
-                    )
-                with col_b:
-                    if os.path.exists(path_file):
-                        with open(path_file, "rb") as f:
-                            st.download_button(
-                                label="⬇️ Descargar",
-                                data=f.read(),
-                                file_name=os.path.basename(path_file),
-                                key=f"{curp_selec}_{tipo}",
-                            )
-                    else:
-                        st.error("No localizado")
-        else:
-            st.warning("No hay archivos adjuntos cargados para esta persona.")
-
-    conn.close()
+    # Vista previa visual de cómo lucirán los botones de descarga
+    st.write("**Documentos cargados en el expediente (Ejemplo):**")
+    col_a, col_b = st.columns([3, 1])
+    with col_a:
+        st.info("📄 **CURP**: `CURP_MARIA_GARCIA.pdf`")
+        st.info("📄 **Cédula Profesional**: `CEDULA_MARIA_GARCIA.pdf`")
+    with col_b:
+        st.button("⬇️ Descargar", key="d1")
+        st.button("⬇️ Descargar", key="d2")
 
 # ---------------------------------------------------------
-# REPORTES
+# 3. REPORTES (SOLO INTERFAZ)
 # ---------------------------------------------------------
 elif opcion == "📊 Reportes Excel":
-    st.subheader("Padrón General de Registros")
+    st.subheader("Vista Previa del Padrón")
+    st.write(
+        "Aquí se desplegará la tabla completa con opción de descarga a Excel."
+    )
 
-    conn = sqlite3.connect(DB_PATH)
-    df_todo = pd.read_sql_query("SELECT * FROM personas", conn)
-    conn.close()
+    datos_reporte = pd.DataFrame(
+        {
+            "ID": [1, 2],
+            "CURP": ["GARM950512MDFXXX01", "VILA920101MDFXXX02"],
+            "Nombre Completo": [
+                "María García Mendoza",
+                "Juan Pérez López",
+            ],
+            "Estatus Expediente": ["Completo (9/9)", "Incompleto (5/9)"],
+        }
+    )
 
-    if not df_todo.empty:
-        st.dataframe(df_todo, use_container_width=True)
-
-        output_excel = "reporte_expedientes.xlsx"
-        df_todo.to_excel(output_excel, index=False)
-
-        with open(output_excel, "rb") as f:
-            st.download_button(
-                label="📥 Exportar Base de Datos a Excel",
-                data=f,
-                file_name="Reporte_Expedientes.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
-    else:
-        st.info("Aún no hay expedientes registrados.")
+    st.dataframe(datos_reporte, use_container_width=True)
+    st.button("📥 Descargar Reporte en Excel (Demo)")
